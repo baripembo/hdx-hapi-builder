@@ -1,5 +1,6 @@
 <script>
   import Map from "../components/Map.svelte";
+  import KeyFigure from "../components/KeyFigure.svelte";
   import PageRenderer from "../components/PageRenderer.svelte";
   import LineChart from "../components/charts/LineChart.svelte";
   import Table from "../components/charts/Table.svelte";
@@ -39,9 +40,6 @@
       selectedCommodities.has(d.commodity_name) &&
       d.commodity_category !== 'non-food'
   );
-
-  $: console.log("Selected Commodities:", selectedCommodities);
-  $: console.log("Filtered Data:", filteredData);
 
   // Toggle commodity selection
   const toggleCommodity = (commodity) => {
@@ -122,7 +120,6 @@
       </div>
 
       <!-- Conditional rendering based on currentView -->
-
       {#if currentView === "charts"}
         <LineChart data={filteredData} key={filteredData.length} />
       {/if}
@@ -132,6 +129,11 @@
       {#if currentView === "map"}
         <Map data={$pageInfo.food_price_by_market} admin2_name="{'Fayzabad'}" />
       {/if}
+
+      <!-- Key figures -->
+      <div class='keyfigure-container'>
+        <KeyFigure title={'Number of commodities'} value={selectedCommodities.size} />
+      </div>
     </div>
   </div>
 
@@ -141,7 +143,9 @@
   .button-container {
     margin-bottom: 20px;
   }
-
+  .keyfigure-container {
+    margin-top: 20px;
+  }
   .checkbox-list {
     display: flex;
     flex-direction: column;
