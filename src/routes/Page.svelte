@@ -54,7 +54,7 @@
   };
 
   if (pageType === "locations") {
-    template = (info) => `<h1>Priority Humanitarian Locations</h1><ul>${info.locations.map((loc) => `<li><a href='/index.html?type=location&code=${loc.code}'>${loc.name}</a></li>`).join("")}</ul>`;
+    template = (info) => `<h1>Priority Humanitarian Locations</h1><ul>${info.locations.map((loc) => `<li><a href='./index.html?type=location&code=${loc.code}'>${loc.name}</a></li>`).join("")}</ul>`;
     fetchFunction = () => renderLocations(params.filter);
   } else if (pageType === "location") {
     template = (info) => {
