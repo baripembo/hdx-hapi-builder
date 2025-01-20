@@ -7,6 +7,8 @@
   import { renderLocations, renderLocation } from "../lib/renderFunctions";
   import { pageInfo } from "../lib/store";
 
+  import { utcFormat } from 'd3';
+
   export let pageType;
   export let params;
 
@@ -16,6 +18,10 @@
 
   let selectedCommodities = new Set();
   let commodityList = [];
+
+  const formatTime = utcFormat("%Y");
+  let startYear = formatTime(new Date('1998'));
+  let endYear = formatTime(new Date());
 
   // Define `data` from $pageInfo.food_price.data
   $: data = $pageInfo?.food_price?.data || [];
@@ -41,6 +47,25 @@
       d.commodity_category !== 'non-food'
   );
 
+  const getYears = () => {
+    const minYear = Number(startYear);
+    const maxYear = Number(endYear);
+    return Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+  };
+
+  const yearOptions = getYears()
+    .map(year => `<option value="${year}" ${year === Number(endYear) ? "selected" : ""}>${year}</option>`)
+    .join("");
+
+  const updateParams = () => {
+    params = {
+      ...params,
+      startYear: startYear,
+      endYear: endYear
+    };
+    console.log('hey',params)
+  };
+
   // Toggle commodity selection
   const toggleCommodity = (commodity) => {
     // Create a new Set to trigger reactivity
@@ -54,12 +79,36 @@
   };
 
   if (pageType === "locations") {
-    template = (info) => `<h1>Priority Humanitarian Locations</h1><ul>${info.locations.map((loc) => `<li><a href='./index.html?type=location&code=${loc.code}'>${loc.name}</a></li>`).join("")}</ul>`;
+    template = (info) => {
+      return `
+        <h1>Priority Humanitarian Locations</h1>
+        <ul>
+          ${info.locations
+            .map(
+              loc =>
+                `<li><a href="./index.html?type=location&code=${loc.code}">${loc.name}</a></li>`
+            )
+            .join("")}
+        </ul>
+        <div class="date-filter">
+          <label for="start-year">Start Year:</label>
+          <select id="start-year" bind:value="{startYear}" on:change="{updateParams}">
+            ${yearOptions}
+          </select>
+
+          <label for="end-year">End Year:</label>
+          <select id="end-year bind:value="{endYear}" on:change="{updateParams}">
+            ${yearOptions}
+          </select>
+        </div>
+      `;
+    }
     fetchFunction = () => renderLocations(params.filter);
   } else if (pageType === "location") {
     template = (info) => {
       //console.log('info', info);
       return `
+        <a href="/">Back to index</a>
         <h1>${info.location.name}</h1>
         <h2 class='header'>Food Prices</h2>
         ${info.food_price_by_market
@@ -145,13 +194,5 @@
   }
   .keyfigure-container {
     margin-top: 20px;
-  }
-  .checkbox-list {
-    display: flex;
-    flex-direction: column;
-    margin-right: 10px;
-  }
-  .checkbox-item {
-    margin-bottom: 5px;
   }
 </style>

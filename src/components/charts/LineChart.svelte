@@ -7,57 +7,53 @@
   let admin2Names = []; 
   let chartRef, minDate, maxDate;
   const formatTime = d3.utcFormat("%Y");
+  const formatNum = d3.format(",");
 
   let selectedAdmin2 = admin2Names[0];
-
-  $: if (data.length > 0) {
-    renderChart();
-  }
 
   // Extract unique admin2_name options
   $: admin2Names = Array.from(new Set(data.map(d => d.admin2_name))).sort();
 
-  // Update the chart when selectedAdmin2 changes
-  $: if (selectedAdmin2) {
+  $: if (data.length > 0 && selectedAdmin2) {
     renderChart();
   }
 
   // Function to render the line chart
   const renderChart = () => {
     // Filter data for the selected admin2_name
-    const filteredData = data.filter(
-      (d) => 
-        d.admin2_name === selectedAdmin2);
+    const filteredData = data
+      .filter((d) => d.admin2_name === selectedAdmin2)
+      .sort((a, b) => new Date(a.reference_period_start) - new Date(b.reference_period_start));
 
     // Get min and max dates for the selected data
     [minDate, maxDate] = d3.extent(filteredData, d => new Date(d.reference_period_start));
 
-
+    // Clear chart
     d3.select(chartRef).selectAll('*').remove();
 
     if (filteredData.length === 0) return;
 
-    // Group data by commodity_name
-    const groupedData = d3.group(filteredData, d => d.commodity_code);
+    // Group data by commodity_name and date
+    const groupedData = d3.group(
+      filteredData,
+      d => d.commodity_code,
+      d => d.reference_period_start
+    );
 
-    // Parse dates and prices
-    const parsedData = Array.from(groupedData, ([commodity_code, values]) => ({
-        commodity_code,
-        commodity_name: values[0].commodity_name,
-        unit: values[0].unit,
-        values: values.map(d => ({
-          date: new Date(d.reference_period_start),
-          price: +d.price,
-        })),
+    const aggregatedData = Array.from(groupedData, ([commodity_code, dateGroups]) => ({
+      commodity_code,
+      commodity_name: Array.from(dateGroups.values())[0][0].commodity_name, 
+      unit: Array.from(dateGroups.values())[0][0].unit, 
+      values: Array.from(dateGroups, ([date, entries]) => ({
+        date: new Date(date),
+        price: d3.mean(entries, d => +d.price) 
+      }))
     }));
 
     // Set dimensions and margins for the chart
     const margin = { top: 20, right: 100, bottom: 30, left: 40 };
     const width = 900 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
-
-    // Clear previous chart
-    d3.select(chartRef).selectAll('*').remove();
 
     // Append SVG element
     const svg = d3
@@ -71,17 +67,17 @@
     // Create scales
     const xScale = d3
       .scaleTime()
-      .domain(d3.extent(filteredData, d => new Date(d.reference_period_start)))
+      .domain([minDate, maxDate])
       .range([0, width]);
 
     const yScale = d3
       .scaleLinear()
-      .domain([0, d3.max(filteredData, d => d.price)])
+      .domain([0, d3.max(aggregatedData.flatMap(d => d.values), d => d.price)])
       .nice()
       .range([height, 0]);
 
     // Create color scale
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(groupedData.keys());
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(aggregatedData.map(d => d.commodity_code));
 
     // Add axes
     svg.append('g')
@@ -89,9 +85,8 @@
       .call(d3.axisBottom(xScale)
         .tickSize(0)
         .tickPadding(10)
-        //.ticks(d3.timeMonth.every(6)) // Show one tick per month
-        .ticks(Math.floor(width / 80)) // Set max number of ticks based on chart width
-        .tickFormat(d3.timeFormat('%b %Y')) // Format as "Month Year", e.g., "Jan 2023"
+        .ticks(Math.floor(width / 80))
+        .tickFormat(d3.timeFormat('%b %Y'))
       );
 
     svg.append('g')
@@ -103,8 +98,8 @@
     // Add Y-Axis Label
     svg.append('text')
       .attr('transform', 'rotate(-90)')
-      .attr('x', -height / 2) // Position in the middle of the y-axis
-      .attr('y', -margin.left + 10) // Adjust position relative to the axis
+      .attr('x', -height / 2) 
+      .attr('y', -margin.left + 10) 
       .attr('text-anchor', 'middle') 
       .style('font-size', '12px') 
       .style('fill', '#333') 
@@ -112,12 +107,12 @@
 
     // Y-axis grid lines
     const yGrid = d3.axisLeft(yScale)
-      .tickSize(-width) // Extend lines horizontally across the chart
-      .tickFormat(''); // Remove labels from the grid lines
+      .tickSize(-width) 
+      .tickFormat('');
 
     // Append the grid lines to the SVG
     svg.append('g')
-      .attr('class', 'grid') // Add a class for styling
+      .attr('class', 'grid')
       .call(yGrid);
 
     // Add lines
@@ -129,7 +124,7 @@
     // Add lines
     const lines = svg
       .selectAll('.line')
-      .data(parsedData)
+      .data(aggregatedData)
       .enter()
       .append('path')
       .attr('class', 'line')
@@ -139,28 +134,24 @@
       .attr('d', d => line(d.values))
       .style('opacity', 1);
 
-
     // Add commodity name labels at the end of the lines
     const labels = svg
         .selectAll('.line-label')
-        .data(parsedData)
+        .data(aggregatedData)
         .enter()
         .append('text')
         .attr('class', 'line-label')
-        .attr('x', d => xScale(d.values[d.values.length - 1].date)) // Position at the last data point
-        .attr('y', d => yScale(d.values[d.values.length - 1].price)) // Align with the last price value
-        .attr('dx', 5) // Slight offset to the right
-        .attr('dy', 4) // Slight vertical alignment adjustment
-        //.style('font-size', '13px')
-        //.style('font-weight', '600')
-        .style('fill', d => colorScale(d.commodity_code)) // Match the line color
-        .style('cursor', 'pointer') // Set cursor to pointer directly
+        .attr('x', d => xScale(d.values[d.values.length - 1].date)) 
+        .attr('y', d => yScale(d.values[d.values.length - 1].price))
+        .attr('dx', 5) 
+        .attr('dy', 4) 
+        .style('fill', d => colorScale(d.commodity_code)) 
+        .style('cursor', 'pointer') 
         .text(d => d.commodity_name)
         .on('mouseover', function (event, d) {
           // Fade all lines and labels
-          lines.style('opacity', 0.2); // Dim all lines
-          labels.style('opacity', 0.2); // Dim all labels
-          // Highlight the corresponding line and label
+          lines.style('opacity', 0.2); 
+          labels.style('opacity', 0.2);
           d3.select(this).style('opacity', 1); // Highlight the hovered label
           svg
             .selectAll('.line')
@@ -173,7 +164,6 @@
           lines.style('opacity', 1);
           labels.style('opacity', 1);
         });
-
 
     // Tooltip container
     const tooltip = d3.select('body')
@@ -203,14 +193,13 @@
       const hoveredDate = xScale.invert(mouseX);
 
       // Find the closest data for each line
-      const tooltipData = parsedData.map(d => {
+      const tooltipData = aggregatedData.map(d => {
         const index = bisectDate(d.values, hoveredDate);
         const closestPoint = d.values[Math.max(0, Math.min(index, d.values.length - 1))];
         //const closestPrice = `${(closestPoint.date.getTime() <= hoveredDate.getTime()) ? closestPoint.price : 'NA'} per ${d.unit}`;
 
         return { commodity_name: d.commodity_name, unit: d.unit, price: closestPoint.price, date: closestPoint.date };
       }).sort((a, b) => b.price - a.price); 
-
 
       // Update vertical line
       verticalLine
@@ -222,8 +211,8 @@
       tooltip
         .style('opacity', 1)
         .html(`
-            <strong>${d3.timeFormat('%b %Y')(hoveredDate)}</strong><br>
-            ${tooltipData.map(d => `${d.commodity_name}: ${d.price} per ${d.unit}`).join('<br>')}
+          <strong>${d3.timeFormat('%b %Y')(hoveredDate)}</strong><br>
+          ${tooltipData.map(d => `${d.commodity_name}: ${formatNum(d.price)} per ${d.unit}`).join('<br>')}
         `)
         .style('left', `${event.pageX + 10}px`)
         .style('top', `${event.pageY - 50}px`);
@@ -253,7 +242,8 @@
     <option value={admin2}>{admin2}</option>
   {/each}
 </select>
-<span> from {formatTime(minDate)} to {formatTime(maxDate)}</span>
+<!-- <span> from {formatTime(minDate)} to {formatTime(maxDate)}</span> -->
+
 
 <div bind:this={chartRef} class="chart"></div>
 
@@ -273,13 +263,5 @@
   }
   path.line {
     transition: opacity 0.3s ease-in-out; /* Smooth fading effect */
-  }
-  .checkbox-list {
-    display: flex;
-    flex-direction: column;
-    margin-right: 10px;
-  }
-  .checkbox-item {
-    margin-bottom: 5px;
   }
 </style>

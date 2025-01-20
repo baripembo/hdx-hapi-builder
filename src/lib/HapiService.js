@@ -8,7 +8,8 @@ async function fetchData(category, subcategory, params) {
   let finished = false;
 
   // Clone and extend parameters
-  params = { ...params, app_identifier: API_KEY, limit: PAGE_SIZE };
+  console.log('--params', params)
+  params = { ...params, app_identifier: API_KEY, limit: PAGE_SIZE, start_date: '2024-01-01', end_date: '2025-01-01' };
 
   while (!finished) {
     params.offset = offset;
