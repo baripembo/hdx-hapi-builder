@@ -3,7 +3,7 @@
   import mapboxgl from 'mapbox-gl';
   import * as d3 from 'd3';
   import '../../node_modules/mapbox-gl/dist/mapbox-gl.css';
-  import { convert_to_geoJSON } from "../lib/dataUtils"; 
+  import { convertToGeoJSON } from "../lib/hapiUtils"; 
   import { draw_sparklines } from "../lib/chartUtils"; 
 
   mapboxgl.baseApiUrl = 'https://data.humdata.org/mapbox';
@@ -15,7 +15,7 @@
   let tooltip = d3.select('.tooltip');
 
   onMount(() => {
-    const geoData = convert_to_geoJSON(data);
+    const geoData = convertToGeoJSON(data);
 
     map = new mapboxgl.Map({
       container: 'map',
