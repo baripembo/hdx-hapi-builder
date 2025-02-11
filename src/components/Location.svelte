@@ -54,7 +54,7 @@
   };
 </script>
 
-<a href="/">Back to index</a>
+<a href="/hdx-hapi-builder/">Back to index</a>
 <h1>{location.name}</h1>
 <h2 class="header">Food Prices</h2>
 
