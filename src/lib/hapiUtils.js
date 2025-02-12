@@ -150,6 +150,7 @@ async function renderLocation(pcode, startDate, endDate) {
 
   info.admin1s = await fetchData("metadata", "admin1", { location_code: pcode });
   const availability = await fetchData("metadata", "data-availability", { location_code: pcode });
+  //info.food_price = await getSubcategory("food-security-nutrition-poverty", "food-prices-market-monitor", { admin_level: 2, location_code: pcode, start_date: startDate, end_date: endDate }, availability);
   info.food_price = await getSubcategory("food", "food-price", { admin_level: 2, location_code: pcode, start_date: startDate, end_date: endDate }, availability);
 
   if (info.food_price?.data) {

@@ -51,9 +51,16 @@
     }));
 
     // Set dimensions and margins for the chart
-    const margin = { top: 20, right: 100, bottom: 30, left: 40 };
+    const margin = { top: 20, right: 100, bottom: 40, left: 40 };
     const width = 900 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
+
+    const monthFormat = d3.timeFormat('%b');
+    const yearFormat = d3.timeFormat('%Y');
+
+    // Calculate the optimal number of month ticks
+    const tickSpacing = 200;
+    const numberOfMonthTicks = Math.floor(width / tickSpacing);
 
     // Append SVG element
     const svg = d3
@@ -79,17 +86,28 @@
     // Create color scale
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(aggregatedData.map(d => d.commodity_code));
 
-    // Add axes
+    // Add month ticks
     svg.append('g')
       .attr('transform', `translate(0,${height})`)
       .call(d3.axisBottom(xScale)
+        .ticks(d3.timeMonth.every(Math.ceil(12 / numberOfMonthTicks)))
         .tickSize(0)
         .tickPadding(10)
-        .ticks(Math.floor(width / 80))
-        .tickFormat(d3.timeFormat('%b %Y'))
+        .tickFormat(monthFormat)
+      );
+
+    // Add year ticks
+    svg.append('g')
+      .attr('transform', `translate(0,${height+20})`) // Move the year labels slightly down
+      .call(d3.axisBottom(xScale)
+        .ticks(d3.timeYear.every(1))
+        .tickSize(0)
+        .tickPadding(10)
+        .tickFormat(yearFormat)
       );
 
     svg.append('g')
+      .attr('transform', `translate(0,-8)`)
       .call(d3.axisLeft(yScale)
         .tickSize(0)
         .tickFormat(d3.format(".2s"))
@@ -99,7 +117,7 @@
     svg.append('text')
       .attr('transform', 'rotate(-90)')
       .attr('x', -height / 2) 
-      .attr('y', -margin.left + 10) 
+      .attr('y', -margin.left + 20) 
       .attr('text-anchor', 'middle') 
       .style('font-size', '12px') 
       .style('fill', '#333') 
