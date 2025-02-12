@@ -3,6 +3,7 @@
   import LineChart from "../components/charts/LineChart.svelte";
   import Map from "../components/Map.svelte";
   import Table from "../components/charts/Table.svelte";
+  import * as d3 from 'd3';
 
   export let data;
 
@@ -108,9 +109,14 @@
     {/if}
 
     <!-- Key Figures -->
-    <div class="keyfigure-container">
-      <KeyFigure title="Number of commodities" value={selectedCommodities.size} />
+    <div class="grid-container">
+      <div class="col-3">
+        <div class="keyfigure-container">
+          <KeyFigure title="Number of commodities" value={selectedCommodities.size} />
+        </div>
+      </div>
     </div>
+
   </div>
 </div>
 
