@@ -2,7 +2,7 @@
 
 // Constants for API configuration
 const API_KEY = "aGFwaS1kYXNoYm9hcmQ6ZXJpa2Eud2VpQHVuLm9yZw==";
-const HAPI_HOST = "https://hapi.humdata.org/api/v1";
+const HAPI_HOST = "https://hapi.humdata.org/api/v2";
 const PAGE_SIZE = 10000;
 
 // Helper function to fetch data with pagination
@@ -150,8 +150,8 @@ async function renderLocation(pcode, startDate, endDate) {
 
   info.admin1s = await fetchData("metadata", "admin1", { location_code: pcode });
   const availability = await fetchData("metadata", "data-availability", { location_code: pcode });
-  //info.food_price = await getSubcategory("food-security-nutrition-poverty", "food-prices-market-monitor", { admin_level: 2, location_code: pcode, start_date: startDate, end_date: endDate }, availability);
-  info.food_price = await getSubcategory("food", "food-price", { admin_level: 2, location_code: pcode, start_date: startDate, end_date: endDate }, availability);
+  info.food_price = await getSubcategory("food-security-nutrition-poverty", "food-prices-market-monitor", { admin_level: 2, location_code: pcode, start_date: startDate, end_date: endDate }, availability);
+  //info.food_price = await getSubcategory("food", "food-price", { admin_level: 2, location_code: pcode, start_date: startDate, end_date: endDate }, availability);
 
   if (info.food_price?.data) {
     info.food_price_by_market = aggregateFoodPricesByMarket(info.food_price.data);
