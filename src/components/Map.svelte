@@ -6,8 +6,8 @@
   import { convertToGeoJSON } from "../lib/hapiUtils"; 
   import { draw_sparklines } from "../lib/chartUtils"; 
 
-  mapboxgl.baseApiUrl = 'https://data.humdata.org/mapbox';
-  mapboxgl.accessToken = 'cacheToken';
+  //mapboxgl.baseApiUrl = 'https://data.humdata.org/mapbox';
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaHVtZGF0YSIsImEiOiJja2FvMW1wbDIwMzE2MnFwMW9teHQxOXhpIn0.Uri8IURftz3Jv5It51ISAA';
 
   export let data = [];
 

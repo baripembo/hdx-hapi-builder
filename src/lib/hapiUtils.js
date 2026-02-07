@@ -17,8 +17,20 @@ async function fetchData(category, subcategory, params) {
     params.offset = offset;
     const url = `${HAPI_HOST}/${category}/${subcategory}?${new URLSearchParams(params)}`;
     const response = await fetch(url);
-    const data = await response.json();
 
+    if (!response.ok) {
+      console.warn(`HAPI API error: ${response.status} for ${category}/${subcategory}`);
+      finished = true;
+      break;
+    }
+
+    const text = await response.text();
+    if (!text) {
+      finished = true;
+      break;
+    }
+
+    const data = JSON.parse(text);
     results.push(...data.data);
     finished = data.data.length < PAGE_SIZE;
     offset += PAGE_SIZE;
